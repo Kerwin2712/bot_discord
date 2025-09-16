@@ -451,12 +451,11 @@ class MainMenuView(discord.ui.View):
             except Exception as e:
                 print(f"Error al editar mensaje de MainMenuView en timeout: {e}")
 
-    '''
+    
     @discord.ui.button(label="Ayuda Técnica", style=discord.ButtonStyle.primary, custom_id="technical_help", emoji="🛠️")
     async def technical_help_button(self, interaction: discord.Interaction, button: discord.ui.Button):
         """
         Maneja la interacción cuando se hace clic en el botón 'Ayuda Técnica'.
-        Delega la creación del ticket al cog de `TicketManagement`.
         """
         # 1. Deferir la interacción inmediatamente para evitar el error "Unknown interaction"
         await interaction.response.defer() 
@@ -464,17 +463,9 @@ class MainMenuView(discord.ui.View):
         # 2. Deshabilita los botones del menú principal para esta interacción
         for item in self.children:
             item.disabled = True
-        await interaction.message.edit(content="Has seleccionado 'Ayuda Técnica'. Creando tu canal de soporte...", view=self) # Actualiza el mensaje original con los botones deshabilitados
+        await interaction.message.edit(content="Has seleccionado 'Ayuda Técnica'", view=self) # Actualiza el mensaje original con los botones deshabilitados
         
-        # 3. Llama a la lógica del cog de gestión de tickets
-        ticket_cog = self.bot.get_cog("TicketManagement")
-        if ticket_cog:
-            await ticket_cog.create_technical_ticket(interaction)
-        else:
-            await interaction.followup.send("❌ Error interno: El módulo de gestión de tickets no está cargado. Contacta a un administrador.", ephemeral=True)
-        
-        # No eliminar el mensaje original, solo deshabilitar los botones.
-    '''
+    
 
     @discord.ui.button(label="Necesito un Recurso", style=discord.ButtonStyle.success, custom_id="request_resource", emoji="📚")
     async def request_resource_button(self, interaction: discord.Interaction, button: discord.ui.Button):

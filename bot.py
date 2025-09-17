@@ -5,62 +5,62 @@ import os
 import discord
 from discord.ext import commands
 import asyncio
+import traceback
 
-# Importa las configuraciones y el gestor de la base de datos
+# Importa las configuraciones
 import config
-from database.db_manager import DBManager
-
-# Importa todos los cogs (módulos) que hemos creado
-from cogs.events import Events
-from cogs.commands import Commands
-from cogs.ticket_management import TicketManagement
-from cogs.human_interaction import HumanInteraction
-from cogs.resources import Resources
-from cogs.bug_info import BugInfo # <--- NUEVA LÍNEA
 
 # --- CONFIGURACIÓN DE INTENTS (PERMISOS) ---
-# Los intents definen qué eventos de Discord tu bot puede recibir.
-# Es crucial habilitar solo los que necesitas para optimizar el rendimiento
-# y cumplir con las políticas de Discord.
 intents = discord.Intents.default()
-intents.message_content = True  # Necesario para leer el contenido de los mensajes (para comandos y flujos de conversación)
-intents.members = True          # Necesario para el evento on_member_join (bienvenida a nuevos miembros)
-intents.guilds = True           # Necesario para operaciones a nivel de servidor (crear canales, obtener roles)
+intents.message_content = True
+intents.members = True
+intents.guilds = True
 
-# Inicializa el bot con un prefijo de comando y los intents definidos.
-# El prefijo '&' significa que los comandos se activarán con '&comando'.
+# Inicializa el bot
 bot = commands.Bot(command_prefix='&', intents=intents)
 
 # --- FUNCIÓN PARA CARGAR LOS COGS ---
-async def load_cogs():
-    """
-    Carga todos los cogs del bot de forma asíncrona.
-    """
-    try:
-        await bot.load_extension('cogs.events')
-        await bot.load_extension('cogs.commands')
-        await bot.load_extension('cogs.ticket_management')
-        await bot.load_extension('cogs.human_interaction')
-        await bot.load_extension('cogs.resources')
-        await bot.load_extension('cogs.bug_info') # <--- NUEVA LÍNEA
-        print("✅ Cogs cargados exitosamente.")
-    except Exception as e:
-        print(f"❌ Error al cargar un cog: {e}")
-
-# ... (resto del código del bot.py se mantiene igual) ...
-
-# Ejecutar la función principal
-if __name__ == "__main__":
-    asyncio.run(load_cogs())
-    
-    if config.TOKEN:
+async def load_all_cogs():
+    """Carga todas las extensiones de cogs."""
+    cogs_to_load = [
+        'cogs.events',
+        'cogs.commands',
+        'cogs.ticket_management',
+        'cogs.human_interaction',
+        'cogs.resources',
+        'cogs.bug_info',
+        'cogs.scheduled_message_task'
+    ]
+    print("ℹ️ Cargando cogs...")
+    for cog in cogs_to_load:
         try:
-            bot.run(config.TOKEN)
-        except discord.LoginFailure:
-            print("❌ Error de inicio de sesión: Token inválido. Por favor, verifica tu TOKEN en el archivo .env")
+            await bot.load_extension(cog)
+            print(f"  -> Cog '{cog}' cargado.")
         except Exception as e:
-            print(f"❌ Ocurrió un error al iniciar el bot: {e}")
-            import traceback
-            traceback.print_exc()
-    else:
+            print(f"❌ Error al cargar el cog {cog}: {e}")
+    print("✅ Cogs cargados exitosamente.")
+
+
+# --- FUNCIÓN PRINCIPAL DE INICIO ---
+async def main():
+    """Función principal que carga los cogs y luego inicia el bot."""
+    if not config.TOKEN:
         print("❌ No se encontró el TOKEN del bot. Asegúrate de que está configurado en tu archivo .env.")
+        return
+
+    # El context manager `async with bot` maneja la conexión y la limpieza.
+    async with bot:
+        # Cargamos los cogs antes de iniciar el bot
+        await load_all_cogs()
+        # Iniciamos el bot
+        await bot.start(config.TOKEN)
+
+# --- PUNTO DE ENTRADA ---
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("ℹ️ Bot desconectado manualmente.")
+    except Exception as e:
+        print(f"❌ Ocurrió un error inesperado: {e}")
+        traceback.print_exc()
